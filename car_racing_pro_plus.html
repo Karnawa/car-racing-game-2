@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Car Racing Pro Plus</title>
+<style>
+body{margin:0;background:#000;font-family:Arial;}
+#screen{color:white;text-align:center;padding-top:120px;}
+button{padding:15px 30px;font-size:20px;border:none;border-radius:10px;background:#ff5722;color:white;}
+#score{color:white;text-align:center;font-size:18px;padding:5px;}
+#game{display:none;justify-content:center;}
+.side{width:60px;background:#1b5e20;overflow:hidden;position:relative;}
+.tree{position:absolute;width:30px;height:50px;background:#2e7d32;border-radius:0 0 15px 15px;}
+.tree:before{content:"";position:absolute;top:-25px;left:-10px;width:50px;height:30px;background:#388e3c;border-radius:50%;}
+#road{position:relative;width:300px;height:500px;background:#444;overflow:hidden;}
+.line{position:absolute;width:10px;height:40px;background:white;left:145px;animation:lineMove 1s linear infinite;}
+@keyframes lineMove{from{top:-50px;}to{top:500px;}}
+#player{position:absolute;width:40px;height:70px;background:linear-gradient(red,darkred);bottom:10px;left:130px;border-radius:8px;transition:left .15s;}
+#player:before{content:"";position:absolute;top:5px;left:5px;width:30px;height:15px;background:rgba(255,255,255,.4);border-radius:4px;}
+.enemy{position:absolute;width:40px;height:70px;background:linear-gradient(yellow,orange);top:-100px;border-radius:8px;}
+#controls{display:flex;justify-content:space-around;margin-top:10px;}
+.btn{width:120px;padding:15px;background:#ff5722;color:white;border-radius:10px;font-size:18px;}
+</style>
+</head>
+<body>
+
+<div id="screen">
+  <h1>🚗 Car Racing Pro Plus</h1>
+  <button onclick="startGame()">START GAME</button>
+</div>
+
+<div id="score">Score: 0</div>
+
+<div id="game">
+  <div class="side" id="leftSide"></div>
+  <div id="road">
+    <div class="line"></div>
+    <div id="player"></div>
+  </div>
+  <div class="side" id="rightSide"></div>
+</div>
+
+<div id="controls">
+  <div class="btn" id="left">⬅ LEFT</div>
+  <div class="btn" id="right">RIGHT ➡</div>
+</div>
+
+<!-- Sounds -->
+<audio id="engine" loop>
+  <source src="https://assets.mixkit.co/sfx/preview/mixkit-fast-car-engine-loop-1193.mp3" type="audio/mpeg">
+</audio>
+<audio id="crash">
+  <source src="https://assets.mixkit.co/sfx/preview/mixkit-car-crash-with-glass-break-1699.mp3" type="audio/mpeg">
+</audio>
+
+<script>
+let player, road, scoreEl, engineSound, crashSound;
+let score=0,speed=4,gameOn=false;
+
+function startGame(){
+ document.getElementById("screen").style.display="none";
+ document.getElementById("game").style.display="flex";
+ gameOn=true;
+ player=document.getElementById("player");
+ road=document.getElementById("road");
+ scoreEl=document.getElementById("score");
+ engineSound=document.getElementById("engine");
+ crashSound=document.getElementById("crash");
+ engineSound.play();
+ requestFullscreen();
+}
+
+function requestFullscreen(){
+ let el=document.documentElement;
+ if(el.requestFullscreen) el.requestFullscreen();
+}
+
+document.getElementById("left").addEventListener("touchstart",()=>move(-25));
+document.getElementById("right").addEventListener("touchstart",()=>move(25));
+
+function move(val){
+ if(!gameOn)return;
+ let left=parseInt(player.style.left||130);
+ let newLeft=left+val;
+ if(newLeft>=0 && newLeft<=260) player.style.left=newLeft+"px";
+}
+
+function createTree(sideId){
+ if(!gameOn)return;
+ let side=document.getElementById(sideId);
+ let tree=document.createElement("div");
+ tree.className="tree";
+ tree.style.left=Math.random()*20+"px";
+ tree.style.top="-60px";
+ side.appendChild(tree);
+ let t=setInterval(()=>{
+   let top=parseInt(tree.style.top);
+   tree.style.top=(top+speed)+"px";
+   if(top>500){side.removeChild(tree);clearInterval(t);}
+ },20);
+}
+
+function createEnemy(){
+ if(!gameOn)return;
+ let enemy=document.createElement("div");
+ enemy.className="enemy";
+ enemy.style.left=Math.random()*260+"px";
+ road.appendChild(enemy);
+ let m=setInterval(()=>{
+  let top=parseInt(enemy.style.top||-100);
+  enemy.style.top=(top+speed)+"px";
+  if(top>500){
+   road.removeChild(enemy);clearInterval(m);
+   score++;scoreEl.innerText="Score: "+score;
+   if(score%10===0)speed++;
+  }
+  let pLeft=parseInt(player.style.left);
+  let eLeft=parseInt(enemy.style.left);
+  if(top>400&&top<480&&eLeft>pLeft-30&&eLeft<pLeft+30){
+    crashSound.play();
+    if(navigator.vibrate) navigator.vibrate(300);
+    engineSound.pause();
+    alert("💥 Game Over! Score: "+score);
+    location.reload();
+  }
+ },20);
+}
+
+setInterval(()=>createEnemy(),1500);
+setInterval(()=>createTree("leftSide"),1200);
+setInterval(()=>createTree("rightSide"),1200);
+</script>
+
+</body>
+</html>
